@@ -1,109 +1,148 @@
-<div id="id" style="width:100%;border:solid 1px #FFFFFF;"></div>
-<input id="msg" type="text" style="width:80%;" value="" onkeypress="sendEnter(event);" maxlength="128" />
-<button id="send" type="button" onclick="sendChat()">送信</button>
-<div id="chat" style="width:100%;border:solid 1px #FFFFFF;overflow:auto;"></div>
-<script>
-    var chat = document.getElementById("chat");
-    // ID生成
-    var id = Math.random().toString(32).substring(2);
-    document.getElementById("id").innerHTML = 'ユーザーID : ' + id;
-    // WS接続（Achexへ接続）
-    ws = new WebSocket("wss://cloud.achex.ca/websocketChat");
-    // WS接続
-    ws.onopen = e => {
-        console.log('open');
-        chat.innerHTML = 'You ID : ' + id + '（' + getDateTime() + '）';
-        // 認証（auth, passwordは何でもOK）
-        ws.send(JSON.stringify({ "auth": "websocketChatRoom", "password": "1234Password" }));
-        // 
-        ws.send(JSON.stringify({ "to": "websocketChatRoom", "id": id, "message": '入室しました。' }));
-    }
-    // メッセージ受信
-    ws.onmessage = e => {
-        console.log('message');
-        console.log(e);
-        var obj = JSON.parse(e.data);
-        if (obj.auth == 'OK') {
-            // 認証OK
-            return;
-        }
-        addChat(obj.id, obj.message);
-    }
-    // WS切断
-    ws.onclosed = e => {
-        console.log('closed');
-        ws.send(JSON.stringify({ "to": "websocketChatRoom", "id": id, "message": '退室しました。' }));
-    }
+<head>
+    <meta charset="utf-8">
+    <title>リアルタイムチャット</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
 
-    function escapeHtml(string) {
-        if (typeof string !== 'string') {
-            return string;
-        }
-        return string.replace(/[&'`"<>]/g, function (match) {
-            return {
-                '&': '&amp;',
-                "'": '&#x27;',
-                '`': '&#x60;',
-                '"': '&quot;',
-                '<': '&lt;',
-                '>': '&gt;',
-            }[match]
-        });
-    }
-
-    function sendEnter(event) {
-        const msgElem = document.getElementById("msg");
-        const msg = msgElem.value;
-
-        //コメントが空なら何もしない
-        if (msg === "") {
-            return;
+<body>
+    <style>
+        .postInfo {
+            font-size: 0.8rem;
+            color: #888888;
+            margin-top: 0.5rem;
         }
 
-        //エンターキー押下なら
-        if (event === undefined || event.keyCode === 13) {
-            sendChat();
-        }
-    }
-    // メッセージ送信
-    function sendChat() {
-        let msgElem = document.getElementById("msg");
-        let msg = msgElem.value;
-        msgElem.value = "";
-
-        //コメントが空なら何もしない
-        if (msg === "") {
-            return;
+        .postMessage {
+            font-size: 1rem;
+            color: #000000;
         }
 
-        ws.send(JSON.stringify({ "to": "websocketChatRoom", "id": id, "message": msg }));
-    }
-    // チャット
-    function addChat(id, msg) {
-        chat.innerHTML = escapeHtml(id) + 'さん : ' + '（' + getDateTime() + '）' + '<br>'
-            + escapeHtml(msg.substr(0,128)) + '<br>'
-            + chat.innerHTML;
-    }
-    // 1桁の数字を0埋めで2桁にする
-    var toDoubleDigits = function (num) {
-        num += "";
-        if (num.length === 1) {
-            num = "0" + num;
-        }
-        return num;
-    };
-    // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
-    var getDateTime = function () {
-        var date = new Date();
-        var year = date.getFullYear();
-        var month = toDoubleDigits(date.getMonth() + 1);
-        var day = toDoubleDigits(date.getDate());
-        var hour = toDoubleDigits(date.getHours());
-        var min = toDoubleDigits(date.getMinutes());
-        var sec = toDoubleDigits(date.getSeconds());
-        return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
-    };
+        .postMsgBox {
+            width: 80%;
+            line-height: 1rem;
+            margin-top: 0.2rem;
+            border: solid 1px #dcdcdc;
+            font-size: inherit;
+            border-radius: 32px;
+            padding: 16px;
 
-    // 参考サイト
-    // https://c-a-p-engineer.github.io/tech/2021/09/03/websocket-achex/
-</script>
+        }
+    </style>
+    <div id="id" style="width:100%;border:solid 1px #FFFFFF;"></div>
+    <input id="msg" type="text" class="postMsgBox" value="" onkeypress="sendEnter(event);" placeholder="投稿したい内容を入力"
+        maxlength="128" />
+    <button id="send" type="button" style="border-radius: 32px; border: none; padding: 16px;"
+        onclick="sendChat()">投稿</button>
+    <div id="chat" style="width:100%;border:solid 1px #FFFFFF;overflow:auto;"></div>
+    <script>
+        const chatRoomName = "websocketChatRoom";
+        const dummyPassword = "1234Password";
+
+        var chat = document.getElementById("chat");
+        // ID生成
+        var id = Math.random().toString(32).substring(2);
+        document.getElementById("id").innerHTML = 'ユーザーID : ' + escapeHtml(id);
+        // WS接続（Achexへ接続）
+        ws = new WebSocket("wss://cloud.achex.ca/websocketChat");
+        // WS接続
+        ws.onopen = e => {
+            console.log('open');
+            chat.innerHTML = 'You ID : ' + escapeHtml(id) + '（' + getDateTime() + '）';
+            // 認証（auth, passwordは何でもOK）
+            ws.send(JSON.stringify({ "auth": chatRoomName, "password": dummyPassword }));
+            // 
+            ws.send(JSON.stringify({ "to": chatRoomName, "id": id, "message": '入室しました。' }));
+        }
+        // メッセージ受信
+        ws.onmessage = e => {
+            console.log('message');
+            console.log(e);
+            var obj = JSON.parse(e.data);
+            if (obj.auth == 'OK') {
+                // 認証OK
+                return;
+            }
+            addChat(obj.id, obj.message);
+        }
+        // WS切断
+        ws.onclosed = e => {
+            console.log('closed');
+            ws.send(JSON.stringify({ "to": chatRoomName, "id": id, "message": '退室しました。' }));
+        }
+
+        function escapeHtml(string) {
+            if (typeof string !== 'string') {
+                return string;
+            }
+            return string.replace(/[&'`"<>]/g, function (match) {
+                return {
+                    '&': '&amp;',
+                    "'": '&#x27;',
+                    '`': '&#x60;',
+                    '"': '&quot;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                }[match]
+            });
+        }
+
+        function sendEnter(event) {
+            const msgElem = document.getElementById("msg");
+            const msg = msgElem.value;
+
+            //エンターキー押下なら
+            if (event === undefined || event.keyCode === 13) {
+
+                //コメントが空なら何もしない
+                if (msg === "") {
+                    alert("投稿したい文字を入力してください");
+                    return;
+                }
+
+                sendChat();
+            }
+        }
+        // メッセージ送信
+        function sendChat() {
+            let msgElem = document.getElementById("msg");
+            let msg = msgElem.value;
+            msgElem.value = "";
+
+            //コメントが空なら何もしない
+            if (msg === "") {
+                alert("投稿したい文字を入力してください");
+                return;
+            }
+
+            ws.send(JSON.stringify({ "to": chatRoomName, "id": id, "message": msg }));
+        }
+        // チャット
+        function addChat(id, msg) {
+            chat.innerHTML = '<div class="postInfo">' + escapeHtml(id) + 'さん : ' + '（' + getDateTime() + '）' + '<div>'
+                + '<div class="postMessage">' + escapeHtml(msg.substr(0, 128)) + '</div>'
+                + chat.innerHTML;
+        }
+        // 1桁の数字を0埋めで2桁にする
+        var toDoubleDigits = function (num) {
+            num += "";
+            if (num.length === 1) {
+                num = "0" + num;
+            }
+            return num;
+        };
+        // 日時取得 YYYY/MM/DD HH:DD:MI:SS形式で取得
+        var getDateTime = function () {
+            var date = new Date();
+            var year = date.getFullYear();
+            var month = toDoubleDigits(date.getMonth() + 1);
+            var day = toDoubleDigits(date.getDate());
+            var hour = toDoubleDigits(date.getHours());
+            var min = toDoubleDigits(date.getMinutes());
+            var sec = toDoubleDigits(date.getSeconds());
+            return year + '/' + month + '/' + day + ' ' + hour + ':' + min + ':' + sec;
+        };
+
+        // 参考サイト
+        // https://c-a-p-engineer.github.io/tech/2021/09/03/websocket-achex/
+    </script>
+</body>
