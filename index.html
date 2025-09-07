@@ -43,11 +43,16 @@
             width: 100%;
             border: solid 1px #FFFFFF;
         }
+
+        #viewUserId {
+            margin-top: 0.5rem;
+        }
+
     </style>
     <div id="id"></div>
-    <input id="msg" type="text" class="postMsgBox" value="" onkeypress="sendEnter(event);" placeholder="投稿したい内容を入力"
+    <input id="msg" type="text" class="postMsgBox" value="" onkeypress="sendEnter(event);" placeholder="🖊投稿したい内容を入力"
         maxlength="128" />
-    <button id="send" type="button" onclick="sendChat()">投稿</button>
+    <button id="send" type="button" onclick="sendChat()">✨投稿</button>
     <div id="chat"></div>
     <script>
         const chatRoomName = "websocketChatRoom";
@@ -62,7 +67,7 @@
         // WS接続
         ws.onopen = e => {
             console.log('open');
-            chat.innerHTML = 'あなたのユーザーID : ' + escapeHtml(id) + '（' + getDateTime() + '）';
+            chat.innerHTML = '<div id="viewUserId">あなたのユーザーID : ' + escapeHtml(id) + '（' + getDateTime() + '）</div>';
             // 認証（auth, passwordは何でもOK）
             ws.send(JSON.stringify({ "auth": chatRoomName, "password": dummyPassword }));
             // 
