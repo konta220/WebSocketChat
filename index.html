@@ -25,15 +25,30 @@
             font-size: inherit;
             border-radius: 32px;
             padding: 16px;
+        }
 
+        #send {
+            border-radius: 32px;
+            border: none;
+            padding: 16px;
+        }
+
+        #chat {
+            width: 100%;
+            border: solid 1px #FFFFFF;
+            overflow: auto;
+        }
+
+        #id {
+            width: 100%;
+            border: solid 1px #FFFFFF;
         }
     </style>
-    <div id="id" style="width:100%;border:solid 1px #FFFFFF;"></div>
+    <div id="id"></div>
     <input id="msg" type="text" class="postMsgBox" value="" onkeypress="sendEnter(event);" placeholder="投稿したい内容を入力"
         maxlength="128" />
-    <button id="send" type="button" style="border-radius: 32px; border: none; padding: 16px;"
-        onclick="sendChat()">投稿</button>
-    <div id="chat" style="width:100%;border:solid 1px #FFFFFF;overflow:auto;"></div>
+    <button id="send" type="button" onclick="sendChat()">投稿</button>
+    <div id="chat"></div>
     <script>
         const chatRoomName = "websocketChatRoom";
         const dummyPassword = "1234Password";
@@ -47,7 +62,7 @@
         // WS接続
         ws.onopen = e => {
             console.log('open');
-            chat.innerHTML = 'You ID : ' + escapeHtml(id) + '（' + getDateTime() + '）';
+            chat.innerHTML = 'あなたのユーザーID : ' + escapeHtml(id) + '（' + getDateTime() + '）';
             // 認証（auth, passwordは何でもOK）
             ws.send(JSON.stringify({ "auth": chatRoomName, "password": dummyPassword }));
             // 
@@ -118,8 +133,8 @@
         }
         // チャット
         function addChat(id, msg) {
-            chat.innerHTML = '<div class="postInfo">' + escapeHtml(id) + 'さん : ' + '（' + getDateTime() + '）' + '<div>'
-                + '<div class="postMessage">' + escapeHtml(msg.substr(0, 128)) + '</div>'
+            chat.innerHTML = '<div class="msgBox"><div class="postInfo">' + escapeHtml(id) + 'さん : ' + '（' + getDateTime() + '）' + '</div>'
+                + '<div class="postMessage">' + escapeHtml(msg.substr(0, 128)) + '</div></div>'
                 + chat.innerHTML;
         }
         // 1桁の数字を0埋めで2桁にする
