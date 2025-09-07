@@ -56,6 +56,7 @@
     <script>
         const chatRoomName = "websocketChatRoom";
         const dummyPassword = "1234Password";
+        const emptyErrorMessage = "投稿したい文字を入力してください";
 
         var chat = document.getElementById("chat");
         // ID生成
@@ -114,7 +115,7 @@
 
                 //コメントが空なら何もしない
                 if (msg === "") {
-                    alert("投稿したい文字を入力してください");
+                    alert(emptyErrorMessage);
                     return;
                 }
 
@@ -129,7 +130,7 @@
 
             //コメントが空なら何もしない
             if (msg === "") {
-                alert("投稿したい文字を入力してください");
+                alert(emptyErrorMessage);
                 return;
             }
 
